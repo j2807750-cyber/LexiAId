@@ -333,21 +333,99 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Unbounded:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap');
 
-    .stApp { background: #EEF1F4; font-family: 'Manrope', sans-serif; }
-    h1, h2, h3 { font-family: 'Unbounded', sans-serif !important; color: #1B2A4A; }
+    :root {
+        --lx-navy: #1B2A4A;
+        --lx-navy-hover: #263a63;
+        --lx-gold: #C9A227;
+        --lx-bg: #EEF1F4;
+        --lx-panel: #FFFFFF;
+        --lx-border: #e3e0d6;
+        --lx-text: #24304a;
+        --lx-muted: #5b5748;
+    }
+
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        background: var(--lx-bg) !important;
+        color: var(--lx-text) !important;
+        font-family: 'Manrope', sans-serif !important;
+    }
+
+    /* headings */
+    h1, h2, h3, h4 {
+        font-family: 'Unbounded', sans-serif !important;
+        color: var(--lx-navy) !important;
+    }
+
+    /* every bit of plain text Streamlit renders (markdown, captions, labels) */
+    p, span, label, li,
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] span,
+    [data-testid="stCaptionContainer"],
+    [data-testid="stWidgetLabel"] p,
+    .stRadio label, .stRadio p,
+    .stCheckbox label {
+        color: var(--lx-text) !important;
+    }
+    [data-testid="stCaptionContainer"] { color: var(--lx-muted) !important; }
+
     .lexiaid-eyebrow {
-        font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700;
-        color: #C9A227; letter-spacing: 0.02em; margin-bottom: 2px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 12px; font-weight: 700;
+        color: var(--lx-gold) !important;
+        letter-spacing: 0.02em; margin-bottom: 2px;
     }
+
     .lexiaid-panel {
-        background: #FFFFFF; border: 1.5px solid #e9e5d8; border-radius: 14px;
-        padding: 28px; margin-top: 10px;
+        background: var(--lx-panel) !important;
+        border: 1.5px solid var(--lx-border);
+        border-radius: 14px;
+        padding: 28px;
+        margin-top: 10px;
+        color: var(--lx-text) !important;
     }
+
+    /* buttons */
     div.stButton > button {
-        font-family: 'Manrope', sans-serif; font-weight: 600; border-radius: 8px;
-        background: #1B2A4A; color: #F7F4EE; border: none; padding: 0.55em 1.4em;
+        font-family: 'Manrope', sans-serif !important;
+        font-weight: 600;
+        border-radius: 8px;
+        background: var(--lx-navy) !important;
+        color: #F7F4EE !important;
+        border: none !important;
+        padding: 0.55em 1.4em;
     }
-    div.stButton > button:hover { background: #263a63; color: #F7F4EE; }
+    div.stButton > button:hover { background: var(--lx-navy-hover) !important; color: #F7F4EE !important; }
+    div.stButton > button:disabled { opacity: 0.45; color: #F7F4EE !important; }
+    div.stButton > button[kind="primary"] { background: var(--lx-gold) !important; color: var(--lx-navy) !important; }
+    div.stButton > button[kind="primary"]:hover { background: #b8901f !important; }
+
+    /* text inputs / text areas */
+    .stTextInput input, .stTextArea textarea {
+        background: #FFFFFF !important;
+        color: var(--lx-text) !important;
+        border: 1.5px solid #d8d3c4 !important;
+        border-radius: 7px !important;
+    }
+    .stTextInput input::placeholder, .stTextArea textarea::placeholder {
+        color: #9a9584 !important;
+    }
+
+    /* radio buttons: label text + option text */
+    .stRadio [role="radiogroup"] label p { color: var(--lx-text) !important; }
+    .stRadio [role="radiogroup"] label div { color: var(--lx-text) !important; }
+
+    /* tables */
+    [data-testid="stTable"] table { background: #FFFFFF !important; color: var(--lx-text) !important; }
+    [data-testid="stTable"] th { color: var(--lx-navy) !important; border-bottom: 2px solid var(--lx-border) !important; }
+    [data-testid="stTable"] td { color: var(--lx-text) !important; border-bottom: 1px solid #ececec !important; }
+
+    /* containers used for admin question cards */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #FBFAF7 !important;
+        border-color: var(--lx-border) !important;
+    }
+
+    hr { border-color: var(--lx-border) !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -356,9 +434,12 @@ st.markdown(
 
 def header(subtitle):
     st.markdown('<div class="lexiaid-eyebrow">Дарын РҒПО · биология бағыты</div>', unsafe_allow_html=True)
-    st.markdown("# LexiAid")
+    st.markdown("# 📖 LexiAid")
     st.markdown(f"<div style='color:#5b5748; font-size:15px;'>{subtitle}</div>", unsafe_allow_html=True)
-    st.markdown("---")
+    st.markdown(
+        "<div style='height:3px; width:64px; background:#C9A227; border-radius:2px; margin:14px 0 18px;'></div>",
+        unsafe_allow_html=True,
+    )
 
 
 def results_table(rows):
@@ -410,15 +491,15 @@ def reset_all():
 
 nav_col1, nav_col2, nav_col3 = st.columns(3)
 with nav_col1:
-    if st.button("Жаңа сессия", use_container_width=True):
+    if st.button("🔄 Жаңа сессия", use_container_width=True):
         reset_all()
         st.rerun()
 with nav_col2:
-    if st.button("Мәтіндерді баптау", use_container_width=True):
+    if st.button("📝 Мәтіндерді баптау", use_container_width=True):
         st.session_state.stage = "admin"
         st.rerun()
 with nav_col3:
-    if st.button("Пилоттық нәтижелер", use_container_width=True):
+    if st.button("📊 Пилоттық нәтижелер", use_container_width=True):
         st.session_state.stage = "dashboard"
         st.rerun()
 
