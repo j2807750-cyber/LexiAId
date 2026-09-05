@@ -562,7 +562,7 @@ const SPEECH_LANG = { kk:'kk-KZ', ru:'ru-RU', en:'en-US' };
    Төмендегі жолға өз Google Apps Script Web App URL-ыңды қой.
    Орнату нұсқаулығын чаттан қара (Apps Script коды бөлек берілді).
    ===================================================================== */
-const GOOGLE_SHEET_WEBHOOK_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+const GOOGLE_SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxCWKW6qT4py09_O-BFLSXEqXQSqHsrXeBkRgbCATo9xwH7d49VwoRKc9rtPQ-XyvYB/exec";
 
 function sendResultToSheet(payload){
   if(!GOOGLE_SHEET_WEBHOOK_URL || GOOGLE_SHEET_WEBHOOK_URL.indexOf('PASTE_YOUR') === 0){
