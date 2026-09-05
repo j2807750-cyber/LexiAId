@@ -399,6 +399,19 @@ st.markdown(
     div.stButton > button[kind="primary"] { background: var(--lx-gold) !important; color: var(--lx-navy) !important; }
     div.stButton > button[kind="primary"]:hover { background: #b8901f !important; }
 
+    /* the generic p/span text-color rule above wins over inherited button color
+       (direct declarations beat inheritance), so force it back explicitly here */
+    div.stButton > button p,
+    div.stButton > button span,
+    div.stButton > button div {
+        color: #F7F4EE !important;
+    }
+    div.stButton > button[kind="primary"] p,
+    div.stButton > button[kind="primary"] span,
+    div.stButton > button[kind="primary"] div {
+        color: var(--lx-navy) !important;
+    }
+
     /* text inputs / text areas */
     .stTextInput input, .stTextArea textarea {
         background: #FFFFFF !important;
