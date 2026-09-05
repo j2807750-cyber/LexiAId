@@ -173,6 +173,22 @@ HTML_CONTENT = r'''
     border-radius:var(--radius-lg); padding:18px; margin:20px 0 8px;
     box-shadow:var(--shadow);
   }
+
+  /* ---------- name entry screen ---------- */
+  .name-wrap{
+    max-width:420px; margin:10vh auto 0; text-align:center; padding:0 8px;
+  }
+  .name-mascot{font-size:3.6rem; margin-bottom:14px;}
+  .name-title{font-size:1.3rem; margin-bottom:8px;}
+  .name-sub{color:var(--text-muted); margin-bottom:26px;}
+  .name-input{
+    width:100%; padding:16px 18px; font-size:1.15rem; font-weight:700;
+    border-radius:var(--radius-md); border:2px solid var(--border);
+    background:var(--surface); color:var(--text); text-align:center;
+    margin-bottom:14px;
+  }
+  .name-input:focus{outline:none; border-color:var(--primary);}
+  .name-error{color:var(--coral); font-weight:700; font-size:0.85rem; min-height:20px; margin-bottom:6px;}
   .mascot{
     font-size:2.4rem; flex-shrink:0;
     background:var(--primary-tint); width:58px;height:58px;border-radius:16px;
@@ -365,8 +381,20 @@ HTML_CONTENT = r'''
     </div>
   </div>
 
+  <!-- ================= NAME ENTRY SCREEN ================= -->
+  <div class="screen active" id="screen-name">
+    <div class="name-wrap">
+      <div class="name-mascot">🦉</div>
+      <h2 class="name-title" id="nameTitle"></h2>
+      <p class="name-sub" id="nameSub"></p>
+      <input type="text" class="name-input" id="nameInput" maxlength="40" autocomplete="off">
+      <div class="name-error" id="nameError"></div>
+      <button class="primary-btn" id="startBtn"></button>
+    </div>
+  </div>
+
   <!-- ================= HOME SCREEN ================= -->
-  <div class="screen active" id="screen-home">
+  <div class="screen" id="screen-home">
     <div class="hero">
       <div class="mascot">🦉</div>
       <div class="hero-text">
@@ -459,6 +487,12 @@ const I18N = {
     lblXp: "ҰПАЙ",
     lblAcc: "ДӘЛДІК",
     lockedHint: "Алдыңғы сабақты аяқта",
+    nameTitle: "Алдымен танысайық",
+    nameSub: "Жаттығуды бастамас бұрын атыңды жаз.",
+    namePlaceholder: "Атыңды осында жаз",
+    startBtn: "Бастау",
+    nameErrorEmpty: "Атыңды жазуды ұмытпа 🙂",
+    greeting: "Сәлем",
   },
   ru: {
     heroTitle: "Привет! Я Лекси 🦉",
@@ -483,6 +517,12 @@ const I18N = {
     lblXp: "ОЧКИ",
     lblAcc: "ТОЧНОСТЬ",
     lockedHint: "Сначала пройди предыдущий урок",
+    nameTitle: "Для начала познакомимся",
+    nameSub: "Прежде чем начать, напиши своё имя.",
+    namePlaceholder: "Напиши своё имя здесь",
+    startBtn: "Начать",
+    nameErrorEmpty: "Не забудь написать имя 🙂",
+    greeting: "Привет",
   },
   en: {
     heroTitle: "Hi! I'm Lexi 🦉",
@@ -507,9 +547,37 @@ const I18N = {
     lblXp: "XP",
     lblAcc: "ACCURACY",
     lockedHint: "Finish the previous lesson first",
+    nameTitle: "Let's get acquainted first",
+    nameSub: "Write your name before you start practicing.",
+    namePlaceholder: "Type your name here",
+    startBtn: "Start",
+    nameErrorEmpty: "Don't forget to write your name 🙂",
+    greeting: "Hi",
   }
 };
 const SPEECH_LANG = { kk:'kk-KZ', ru:'ru-RU', en:'en-US' };
+
+/* =====================================================================
+   GOOGLE SHEET-ГЕ НӘТИЖЕ ЖІБЕРУ
+   Төмендегі жолға өз Google Apps Script Web App URL-ыңды қой.
+   Орнату нұсқаулығын чаттан қара (Apps Script коды бөлек берілді).
+   ===================================================================== */
+const GOOGLE_SHEET_WEBHOOK_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+
+function sendResultToSheet(payload){
+  if(!GOOGLE_SHEET_WEBHOOK_URL || GOOGLE_SHEET_WEBHOOK_URL.indexOf('PASTE_YOUR') === 0){
+    console.warn('LexiAid: Google Sheet webhook URL орнатылмаған, нәтиже жіберілмеді.', payload);
+    return;
+  }
+  try{
+    fetch(GOOGLE_SHEET_WEBHOOK_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    }).catch(()=>{ /* желі қатесі болса да қосымша жұмысын жалғастыра береді */ });
+  }catch(e){ /* fail silently — never break the lesson flow */ }
+}
 
 /* ======================= LESSON CONTENT ======================= */
 const LESSONS = [
@@ -586,6 +654,7 @@ const LESSONS = [
 
 /* ======================= STATE ======================= */
 let state = {
+  name: safeStorage.get('lexiaid_name',''),
   lang: safeStorage.get('lexiaid_lang','kk'),
   theme: safeStorage.get('lexiaid_theme','light'),
   xp: safeStorage.get('lexiaid_xp',0),
@@ -627,6 +696,7 @@ document.querySelectorAll('#langSwitch button').forEach(b=>{
     state.lang = b.dataset.lang;
     safeStorage.set('lexiaid_lang', state.lang);
     applyLangButtons();
+    renderNameTexts();
     renderHomeTexts();
     renderPath();
   });
@@ -651,9 +721,34 @@ $('settingsToggleBtn').addEventListener('click', ()=>{
   $('settingsPanel').classList.toggle('open');
 });
 
+/* ======================= NAME SCREEN ======================= */
+function renderNameTexts(){
+  $('nameTitle').textContent = t('nameTitle');
+  $('nameSub').textContent = t('nameSub');
+  $('nameInput').placeholder = t('namePlaceholder');
+  $('startBtn').textContent = t('startBtn');
+  $('nameInput').value = state.name || '';
+}
+function submitName(){
+  const val = $('nameInput').value.trim();
+  if(!val){
+    $('nameError').textContent = t('nameErrorEmpty');
+    $('nameInput').focus();
+    return;
+  }
+  state.name = val;
+  safeStorage.set('lexiaid_name', state.name);
+  $('nameError').textContent = '';
+  showScreen('screen-home');
+  renderHomeTexts();
+  renderPath();
+}
+$('startBtn').addEventListener('click', submitName);
+$('nameInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitName(); });
+
 /* ======================= HOME RENDER ======================= */
 function renderHomeTexts(){
-  $('heroTitle').textContent = t('heroTitle');
+  $('heroTitle').textContent = state.name ? `${t('greeting')}, ${state.name}! 👋` : t('heroTitle');
   $('heroSub').textContent = t('heroSub');
   $('settingsLabel').textContent = t('settings');
   $('lblFontSize').textContent = t('fontSize');
@@ -913,6 +1008,20 @@ function finishLesson(){
   safeStorage.set('lexiaid_streak', state.streak);
   safeStorage.set('lexiaid_completed', state.completed);
 
+  sendResultToSheet({
+    name: state.name,
+    lang: state.lang,
+    lesson_id: currentLesson.id,
+    lesson_title: currentLesson.title[state.lang],
+    correct: correctCount,
+    total: total,
+    accuracy: Math.round((correctCount/total)*100),
+    xp_earned: earnedXp,
+    xp_total: state.xp,
+    streak: state.streak,
+    timestamp: new Date().toISOString()
+  });
+
   $('resultTitle').textContent = t('resultTitle');
   $('resultSub').textContent = t('resultSub');
   $('resultXp').textContent = earnedXp;
@@ -933,8 +1042,14 @@ function init(){
   applyTheme();
   applyLangButtons();
   applyReadingVars();
+  renderNameTexts();
   renderHomeTexts();
   renderPath();
+  if(state.name){
+    showScreen('screen-home');
+  } else {
+    showScreen('screen-name');
+  }
 }
 init();
 </script>
@@ -943,4 +1058,4 @@ init();
 
 '''
 
-components.html(HTML_CONTENT, height=1400, scrolling=True)
+components.html(HTML_CONTENT, height=1500, scrolling=True)
